@@ -158,7 +158,7 @@ function backToHome() {
 
 function switchMainTab(tabName) {
     if (tabName === 'form' && currentUserRole === 'mahasiswa') {
-        alert("Mohon maaf, menu 'Isi Data Alumni' hanya tersedia untuk Alumni.");
+        alert("Mohon maaf, menu 'Isi Daftar Alumni' hanya tersedia untuk Alumni.");
         return;
     }
     if (tabName === 'form' && !isAlumniAuthenticated && !isStaffAuthenticated) {
