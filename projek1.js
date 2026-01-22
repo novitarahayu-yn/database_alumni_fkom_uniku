@@ -39,12 +39,6 @@ let currentUserRole = ""; // untuk "mahasiswa", "alumni", atau "staff"
 let isAlumniAuthenticated = false;
 let isStaffAuthenticated = false;
 
-let databaseAlumni = [
-    { id: 1, nama: "Budi Santoso", prodi: "SISTEM INFORMASI", tahun: "2024", hp: "08123456789", email: "budi@uniku.ac.id", prestasi: "Lulusan Terbaik", posisi: "Bekerja (Data Analyst)" },
-    { id: 2, nama: "Siti Aminah", prodi: "TEKNIK INFORMATIKA", tahun: "2023", hp: "08987654321", email: "siti@uniku.ac.id", prestasi: "Juara Hackathon", posisi: "Wirausaha (Tech Startup)" }
-];
-
-
 // LOWONGAN KERJA (LOKER) - DATABASE UTAMA
 const daftarLoker = [
     {
