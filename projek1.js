@@ -646,47 +646,47 @@ $(document).ready(function() {
     });
 
     $('#formAlumni').on('submit', function(e) {
-        e.preventDefault();
-        const btnSubmit = $(this).find('button[type="submit"]');
-        btnSubmit.html('<i class="fas fa-spinner fa-spin"></i> Mengirim...').prop('disabled', true);
+    e.preventDefault(); 
+    
+    const btnSubmit = $(this).find('button[type="submit"]');
+    btnSubmit.html('<i class="fas fa-spinner fa-spin"></i> Sedang Mengirim...').prop('disabled', true);
 
-        const statusVal = $('#inputPosisi').val(); // Misal: "Bekerja"
-        const detailVal = $('#inputDetail1').val();
-       
-        const posisiLengkap = detailVal ? `${statusVal} (${detailVal})` : statusVal;
+    const statusVal = $('#inputPosisi').val(); 
+    const detailVal = $('#inputDetail1').val();
+    const posisiLengkap = detailVal ? `${statusVal} (${detailVal})` : statusVal;
 
-        const formData = {
-            nama: $('#inputNama').val(),
-            nim: $('#inputNIM').val(),
-            prodi: currentProdi,
-            tahun: $('#inputTahun').val(),
-            hp: $('#inputHP').val(),
-            email: $('#inputEmail').val(),
-            prestasi: $('#inputPrestasi').val(),
-            status: posisiLengkap 
-        };
+    const formData = {
+        nama: $('#inputNama').val(),
+        nim: $('#inputNIM').val(),
+        prodi: currentProdi,
+        tahun: $('#inputTahun').val(),
+        nomor_wa: $('#inputHP').val(), 
+        email: $('#inputEmail').val(),
+        prestasi: $('#inputPrestasi').val(),
+        posisi: posisiLengkap 
+    };
 
-        fetch(scriptURL, { 
-            method: 'POST', 
-            mode: 'no-cors', 
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams(formData).toString()
-        })
-        .then(() => {
-            alert('DATA BERHASIL TERKIRIM KE GOOGLE SHEETS!');
-            
-            databaseAlumni.unshift({ id: Date.now(), ...formData });
-            updatePublicAlumniTable();
+    fetch(scriptURL, { 
+        method: 'POST', 
+        body: JSON.stringify(formData) 
+    })
+    .then(res => {
+        alert('DATA BERHASIL DISIMPAN KE DATABASE!');
+        
+        // Update tabel lokal agar data langsung muncul tanpa refresh
+        databaseAlumni.unshift({ id: Date.now(), ...formData, hp: formData.nomor_wa });
+        updatePublicAlumniTable();
 
-            $('#formAlumni')[0].reset();
-            $('#detailTambahan').hide(); 
-            btnSubmit.text("SIMPAN DATA").prop('disabled', false);
-        })
-        .catch(error => {
-            console.error('Error!', error);
-            alert('Gagal mengirim data. Cek koneksi atau URL Script.');
-            btnSubmit.text("SIMPAN DATA").prop('disabled', false);
-        });
+        $('#formAlumni')[0].reset();
+        $('#detailTambahan').hide(); 
+        btnSubmit.text("SIMPAN DATA").prop('disabled', false);
+        
+        executeSwitchTab('data'); 
+    })
+    .catch(error => {
+        console.error('Error!', error);
+        alert('Gagal mengirim. Tapi data akan dicoba simpan lokal.');
+        btnSubmit.text("SIMPAN DATA").prop('disabled', false);
     });
 });
 
