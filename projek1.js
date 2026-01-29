@@ -184,7 +184,6 @@ function openLoginForm(kategori) {
     const emailInput = document.getElementById('staffEmail');
     const loginBtn = document.querySelector('#passwordModal .btn-warning');
 
-    // Reset error message if any
     $('#authError').hide();
 
     if (kategori === 'Staff') {
@@ -193,6 +192,9 @@ function openLoginForm(kategori) {
         emailLabel.innerText = "EMAIL STAFF";
         emailInput.placeholder = "admin@uniku.ac.id";
         loginBtn.innerHTML = 'MASUK SEBAGAI ADMIN <i class="fas fa-sign-in-alt ms-1"></i>';
+        
+        loginBtn.onclick = verifyStaffAccess; 
+        
     } 
     else if (kategori === 'Mahasiswa') {
         modalTitle.innerHTML = '<i class="fas fa-user-graduate me-2"></i>Login Mahasiswa';
@@ -200,6 +202,9 @@ function openLoginForm(kategori) {
         emailLabel.innerText = "NIM MAHASISWA";
         emailInput.placeholder = "Masukkan NIM Anda";
         loginBtn.innerHTML = 'MASUK SEBAGAI MAHASISWA <i class="fas fa-sign-in-alt ms-1"></i>';
+      
+        loginBtn.onclick = verifyMahasiswaAccess;
+
     } 
     else if (kategori === 'Alumni') {
         modalTitle.innerHTML = '<i class="fas fa-user-tag me-2"></i>Portal Alumni';
@@ -207,6 +212,8 @@ function openLoginForm(kategori) {
         emailLabel.innerText = "NIM / EMAIL ALUMNI";
         emailInput.placeholder = "Masukkan NIM atau Email";
         loginBtn.innerHTML = 'MASUK SEBAGAI ALUMNI <i class="fas fa-sign-in-alt ms-1"></i>';
+        
+        loginBtn.onclick = verifyAlumniAccess;
     }
     
     let loginModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('passwordModal'));
