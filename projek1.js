@@ -627,7 +627,6 @@ $(document).ready(function() {
             .catch(err => console.error("Gagal ambil data:", err));
     }
 
-    // Jalankan fungsinya
     ambilDataDariSheets();
 
     startNewsTicker();
@@ -649,43 +648,53 @@ $(document).ready(function() {
     e.preventDefault(); 
     
     const btnSubmit = $(this).find('button[type="submit"]');
-    btnSubmit.html('<i class="fas fa-spinner fa-spin"></i> Sedang Mengirim...').prop('disabled', true);
+    btnSubmit.html('<i class="fas fa-spinner fa-spin"></i> Sedang Menyimpan...').prop('disabled', true);
 
     const statusVal = $('#inputPosisi').val(); 
     const detailVal = $('#inputDetail1').val();
     const posisiLengkap = detailVal ? `${statusVal} (${detailVal})` : statusVal;
 
-    const formData = {
-        nama: $('#inputNama').val(),
-        nim: $('#inputNIM').val(),
-        prodi: currentProdi,
-        tahun: $('#inputTahun').val(),
-        nomor_wa: $('#inputHP').val(), 
-        email: $('#inputEmail').val(),
-        prestasi: $('#inputPrestasi').val(),
-        posisi: posisiLengkap 
-    };
+    const formData = new URLSearchParams();
+    formData.append('nama', $('#inputNama').val());
+    formData.append('nim', $('#inputNIM').val());
+    formData.append('prodi', currentProdi);
+    formData.append('tahun', $('#inputTahun').val());
+    formData.append('nomor_wa', $('#inputHP').val());
+    formData.append('email', $('#inputEmail').val());
+    formData.append('prestasi', $('#inputPrestasi').val());
+    formData.append('posisi', posisiLengkap);
 
     fetch(scriptURL, { 
         method: 'POST', 
-        body: JSON.stringify(formData) 
+        mode: 'no-cors', 
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: formData.toString()
     })
-    .then(res => {
-        alert('DATA BERHASIL DISIMPAN KE DATABASE!');
+    .then(() => {
+        alert('DATA BERHASIL DISIMPAN!');
         
-        // Update tabel lokal agar data langsung muncul tanpa refresh
-        databaseAlumni.unshift({ id: Date.now(), ...formData, hp: formData.nomor_wa });
+        databaseAlumni.unshift({ 
+            id: Date.now(), 
+            nama: $('#inputNama').val(),
+            nim: $('#inputNIM').val(),
+            prodi: currentProdi,
+            tahun: $('#inputTahun').val(),
+            hp: $('#inputHP').val(),
+            prestasi: $('#inputPrestasi').val(),
+            posisi: posisiLengkap 
+        });
+        
         updatePublicAlumniTable();
 
         $('#formAlumni')[0].reset();
         $('#detailTambahan').hide(); 
-        btnSubmit.text("SIMPAN DATA").prop('disabled', false);
+        btnSubmit.html('SIMPAN DATA <i class="fas fa-paper-plane ms-1"></i>').prop('disabled', false);
         
         executeSwitchTab('data'); 
     })
     .catch(error => {
         console.error('Error!', error);
-        alert('Gagal mengirim. Tapi data akan dicoba simpan lokal.');
+        alert('Koneksi terganggu, namun data sudah dicoba dikirim.');
         btnSubmit.text("SIMPAN DATA").prop('disabled', false);
     });
 });
