@@ -99,13 +99,14 @@ function goToProdi() {
 function goToDetailProdi(prodi) {
     currentProdi = prodi;
     $('#title-prodi-detail').text(prodi);
-    $('#visi-text').text(dataProdi[prodi].visi);
-    
-    let misiHtml = "";
-    dataProdi[prodi].misi.forEach(m => {
-        misiHtml += `<li class="mb-2"><i class="fas fa-check-circle text-primary me-2"></i>${m}</li>`;
-    });
-    $('#misi-list').html(misiHtml);
+    if (dataProdi[prodi]) {
+        $('#visi-text').text(dataProdi[prodi].visi);
+        let misiHtml = "";
+        dataProdi[prodi].misi.forEach(m => {
+            misiHtml += `<li class="mb-2"><i class="fas fa-check-circle text-primary me-2"></i>${m}</li>`;
+        });
+        $('#misi-list').html(misiHtml);
+    }
 
     $('#prodi-page').fadeOut(500, function() {
         $('#visi-misi-prodi').removeClass('hidden-section').hide().fadeIn(500);
