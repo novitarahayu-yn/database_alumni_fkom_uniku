@@ -196,7 +196,7 @@
                    url('https://images.unsplash.com/photo-1523050853063-bd8012fec21b?auto=format&fit=crop&w=1500&q=80') center/cover;
    }
    
-   /* Styling Info Pendidikan di Beranda */
+   /* Styling Khusus Info Pendidikan di Beranda */
    .education-info-card {
        border-radius: 20px;
        border-top: 5px solid var(--uniku-blue);
@@ -282,6 +282,7 @@
        to { opacity: 1; transform: translateY(0); }
    }
    
+   /* WhatsApp Floating */
    .floating-contact { position: fixed; bottom: 30px; right: 30px; z-index: 1000; }
    .float-btn.wa { 
        background: #25d366; color: white; text-decoration: none; 
@@ -337,7 +338,7 @@
    }
    
    /* =========================================
-      10. STYLING BAGIAN BERITA (NEWS SECTION)
+   STYLING BAGIAN BERITA (NEWS SECTION)
    ========================================= */
    
    /* Efek kartu berita agar bisa melayang saat di-hover */
@@ -451,7 +452,7 @@
    }
    
    /* ============================================================
-      11. EDIT AREA & TABLE STYLING (STAFF & ADMIN PANEL)
+      10. TAMBAHAN FITUR: EDIT AREA & TABLE STYLING
       ============================================================ */
    
    .edit-area {
