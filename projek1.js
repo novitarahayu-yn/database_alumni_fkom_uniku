@@ -35,11 +35,15 @@ const beritaFkom = [
    2. STATE & DATABASE GLOBAL
    ========================================= */
 let currentProdi = "";
-let currentUserRole = ""; // untuk "mahasiswa", "alumni", atau "staff"
+let currentUserRole = ""; // "mahasiswa", "alumni", atau "staff"
 let isAlumniAuthenticated = false;
 let isStaffAuthenticated = false;
 
-// LOWONGAN KERJA (LOKER) - DATABASE UTAMA
+let databaseAlumni = [
+    { id: 1, nama: "Budi Santoso", prodi: "SISTEM INFORMASI", tahun: "2024", hp: "08123456789", email: "budi@uniku.ac.id", prestasi: "Lulusan Terbaik", posisi: "Bekerja (Data Analyst)" },
+    { id: 2, nama: "Siti Aminah", prodi: "TEKNIK INFORMATIKA", tahun: "2023", hp: "08987654321", email: "siti@uniku.ac.id", prestasi: "Juara Hackathon", posisi: "Wirausaha (Tech Startup)" }
+];
+
 const daftarLoker = [
     {
         id: 1,
@@ -76,7 +80,7 @@ const daftarLoker = [
     }
 ];
 
-// KODE AKSES KHUSUS PAS LOGIN
+// KODE AKSES KHUSUS
 const KODE_RAHASIA = {
     STAFF: "FKOMADMIN2025",
     ALUMNI: "ALUMNIFKOM",
@@ -84,7 +88,7 @@ const KODE_RAHASIA = {
 };
 
 /* =========================================
-   3. NAVIGASI HALAMAN
+   3. FUNGSI NAVIGASI HALAMAN
    ========================================= */
 function goToProdi() {
     $('#welcome-page').fadeOut(500, function() {
@@ -108,12 +112,10 @@ function goToDetailProdi(prodi) {
     });
 }
 
-// DASHBOARD SETELAH PILIH PRODI
 function goToDashboard() {
     const namaProdiTerpilih = currentProdi; 
-
     $('#main-title-header').text(namaProdiTerpilih); 
-    $('#sub-title-header').text("PROGRAM STUDI");    
+    $('#sub-title-header').text("PROGRAM STUDI");   
     $('#nav-prodi-label').text(namaProdiTerpilih);  
 
     let gambarLogo = "logo fkom outline.png"; 
@@ -152,7 +154,7 @@ function backToHome() {
 
 function switchMainTab(tabName) {
     if (tabName === 'form' && currentUserRole === 'mahasiswa') {
-        alert("Mohon maaf, menu 'Isi Daftar Alumni' hanya tersedia untuk Alumni.");
+        alert("Mohon maaf, menu 'Isi Data Alumni' hanya tersedia untuk Alumni.");
         return;
     }
     if (tabName === 'form' && !isAlumniAuthenticated && !isStaffAuthenticated) {
@@ -182,6 +184,7 @@ function openLoginForm(kategori) {
     const emailInput = document.getElementById('staffEmail');
     const loginBtn = document.querySelector('#passwordModal .btn-warning');
 
+    // Reset error message if any
     $('#authError').hide();
 
     if (kategori === 'Staff') {
@@ -225,15 +228,12 @@ function verifyStaffAccess() {
         
         alert("Login Berhasil! Selamat Datang Admin.");
         
-        // Tutup login
         const modalElement = document.getElementById('passwordModal');
         const modalInstance = bootstrap.Modal.getInstance(modalElement);
         if (modalInstance) modalInstance.hide();
 
-        // untuk memunculkan pilihan: Kelola Berita / Lowongan / Alumni
         onLoginSuccess(); 
-        // ------------------------
-
+       
     } else {
         alert("DATA ATAU KODE OTORITAS SALAH!"); 
         $('#authError').text("Kredensial tidak valid. Silahkan hubungi IT Center.").fadeIn();
@@ -242,7 +242,7 @@ function verifyStaffAccess() {
 
 function verifyAlumniAccess() {
     const identitas = $('#staffEmail').val().trim(); 
-    const pass = $('#staffPassword').val().trim(); 
+    const pass = $('#staffPassword').val().trim();
     const kode = $('#authCode').val().trim(); 
 
     // Syarat: Email diisi DAN Password TIDAK BOLEH KOSONG (pass !== "") DAN Kode Benar
@@ -299,9 +299,7 @@ function verifyMahasiswaAccess() {
     }
 }
 
-// fungsi izin edit berdasarkan peran user
 function applyRolePermissions() {
-    // Reset semua elemen agar tidak bisa diedit dulu
     $('[contenteditable]').attr('contenteditable', 'false').css({
         'border': 'none',
         'padding': '0'
@@ -334,7 +332,7 @@ function updatePublicAlumniTable() {
         if (currentUserRole === "staff") {
             kolomAksi = `<td><button class="btn btn-sm btn-danger" onclick="hapusDataAlumni(${data.id})"><i class="fas fa-trash"></i></button></td>`;
         } else {
-            // Jika bukan staff, berikan kolom kosong agar tabel tidak geser
+            // Jika bukan staff, kolom kosong agar tabel tidak geser
             kolomAksi = `<td>-</td>`; 
         }
 
@@ -365,13 +363,13 @@ function renderLoker() {
     const container = document.getElementById('loker-container');
     const statusLogin = document.querySelector('.dropdown-toggle').innerText.toLowerCase();
     
-    // untuk menentukan Apakah user ini Staf?
+    // Tentukan: Apakah user ini Staf?
     const isStaff = statusLogin.includes("staf") || statusLogin.includes("admin");
 
     container.innerHTML = ""; // Bersihkan tampilan lama
 
     dataLoker.forEach((loker) => {
-        // Tombol ini hanya berjalan jika isStaff bernilai TRUE
+        // Tombol ini hanya tercipta jika isStaff bernilai TRUE
         const tombolKhususStaff = isStaff ? 
             `<button class="btn btn-dark btn-sm w-100 mt-2" onclick="bukaEditLoker(${loker.id})">
                 <i class="fas fa-edit"></i> Edit Loker
@@ -391,132 +389,116 @@ function renderLoker() {
     });
 }
 /* ============================================================
-   6. SISTEM MANAJEMEN LOKER (LOGIKA STAFF & ALUMNI)
+   6. SISTEM MANAJEMEN LOKER (LOGIKA GOOGLE SHEETS)
    ============================================================ */
 
-// SATU-SATUNYA fungsi untuk menggambar kartu loker
-function renderLoker() {
-    const container = $('#loker-container');
-    if (!container.length) return;
-    container.empty();
-    
-    daftarLoker.forEach(loker => {
-        // Tombol kelola hanya muncul jika user adalah Staff
-        let btnEdit = "";
-        if (currentUserRole === 'staff') {
-            btnEdit = `
-                <button class="btn btn-dark btn-sm w-100 mt-2" onclick="event.stopPropagation(); showLokerDetail(${loker.id})">
-                    <i class="fas fa-edit me-1"></i> Kelola & Edit Link (Staff)
-                </button>`;
-        }
-        
-        container.append(`
-            <div class="col-md-6 mb-3">
-                <div class="card h-100 border-0 shadow-sm" onclick="showLokerDetail(${loker.id})" style="cursor:pointer">
-                    <div class="card-body">
-                        <h6 class="fw-bold">${loker.posisi}</h6>
-                        <p class="text-primary small mb-1">${loker.perusahaan}</p>
-                        <small class="text-muted"><i class="fas fa-map-marker-alt"></i> ${loker.lokasi || 'Lokasi'}</small>
-                        <hr>
-                        <button class="btn btn-outline-primary btn-sm w-100 mb-1">Lihat Detail</button>
-                        ${btnEdit}
-                    </div>
-                </div>
-            </div>`);
-    });
+const urlSheets = "https://script.google.com/macros/s/AKfycbxD4EIcZtodn0efWTx6iPdw66kD1b5NH_n1ZlXQj8DeqebUvAPWuY-Y6hdk6aALv36I/exec";
+let daftarLokerSheets = []; 
+
+function muatLoker() {
+    console.log("Memuat data loker dari Google Sheets...");
+    fetch(urlSheets)
+        .then(response => response.json())
+        .then(data => {
+            daftarLokerSheets = data; 
+            const container = document.getElementById('loker-container');
+            
+            if (!container) {
+                console.error("Elemen #loker-container tidak ditemukan!");
+                return;
+            }
+
+            container.innerHTML = ""; 
+
+            if (data.length === 0) {
+                container.innerHTML = '<div class="col-12 text-center"><p class="text-muted">Belum ada lowongan tersedia.</p></div>';
+                return;
+            }
+
+            data.forEach((loker, index) => {
+                container.innerHTML += `
+                    <div class="col-lg-4 col-md-6 mb-4"> 
+                        <div class="card shadow-sm bg-white border-0 h-100" style="border-radius: 12px; transition: transform 0.3s;">
+                            <div class="card-body p-4">
+                                <h6 class="fw-bold mb-1">${loker.posisi}</h6>
+                                <p class="small text-primary mb-2">${loker.pt}</p>
+                                <p class="small text-muted mb-3">
+                                    <i class="fas fa-map-marker-alt me-1"></i>${loker.lokasi || 'Cirebon'}
+                                </p>
+                                <hr class="my-3 opacity-25">
+                                <button onclick="bukaModalSheets(${index})" class="btn btn-warning btn-sm w-100 fw-bold py-2" 
+                                   style="border-radius: 8px; background-color: #ffc412; border: none; color: #000;">
+                                   Lihat Detail
+                                </button>
+                            </div>
+                        </div>
+                    </div>`;
+            });
+            console.log("Berhasil memuat " + data.length + " lowongan.");
+        })
+        .catch(error => {
+            console.error('Gagal mengambil data dari Sheets:', error);
+            const container = document.getElementById('loker-container');
+            if (container) container.innerHTML = '<p class="text-danger text-center">Gagal memuat data. Periksa koneksi atau URL Script.</p>';
+        });
 }
 
-//edit loker berdasarkan id
-function showLokerDetail(id) {
-    const loker = daftarLoker.find(item => item.id === id);
+function bukaModalSheets(index) {
+    const loker = daftarLokerSheets[index];
     if (!loker) return;
-
-    idLokerTerpilih = id;
-
-    $('#modalLokerPosisi').text(loker.posisi);
-    $('#modalLokerPerusahaan').text(loker.perusahaan);
-
-    if (currentUserRole === 'staff') {
-        // MODE STAFF: muncul tampilan form input untuk Edit Link & Deskripsi
-        $('#modalLokerDeskripsi').html(`
-            <div class="alert alert-info py-2 small mb-3"><i class="fas fa-user-shield me-2"></i>Mode Edit Staff Aktif</div>
-            <div class="mb-3">
-                <label class="fw-bold small mb-1">Deskripsi Pekerjaan:</label>
-                <textarea id="editDeskripsiAdmin" class="form-control" rows="4">${loker.deskripsi}</textarea>
-            </div>
-            <div class="mb-2">
-                <label class="fw-bold small mb-1">Link Pendaftaran (Hanya Admin):</label>
-                <input type="text" id="editLinkAdmin" class="form-control" value="${loker.linkLamar || ''}" placeholder="https://...">
-            </div>
-        `);
-        
-        $('#btnLamarSekarang').text("SIMPAN PERUBAHAN DATA")
-            .attr('onclick', `prosesSimpanLokerAdmin(${id})`)
-            .attr('href', 'javascript:void(0)')
-            .removeClass('btn-primary').addClass('btn-success');
-    } else {
-
-        // MODE ALUMNI: Tampilkan teks deskripsi dan tombol lamar asli
-        $('#modalLokerDeskripsi').text(loker.deskripsi);
-        
-        $('#btnLamarSekarang').text("Lamar Sekarang")
-            .attr('href', loker.linkLamar || "#")
-            .attr('target', '_blank')
-            .removeAttr('onclick')
-            .removeClass('btn-success').addClass('btn-primary');
+    
+    document.getElementById('modalLokerPosisi').innerText = loker.posisi;
+    document.getElementById('modalLokerPerusahaan').innerText = loker.pt;
+    
+    const areaDeskripsi = document.getElementById('modalLokerDeskripsi');
+    if (areaDeskripsi) {
+        areaDeskripsi.innerText = loker.deskripsi || "Tidak ada deskripsi pekerjaan.";
     }
-
-    let lokerModal = new bootstrap.Modal(document.getElementById('lokerDetailModal'));
-    lokerModal.show();
+    
+    const btnLamar = document.getElementById('btnLamarSekarang');
+    if (btnLamar) {
+        btnLamar.href = loker.linkLamar || "#";
+        btnLamar.target = "_blank";
+        btnLamar.innerText = "Lamar Sekarang";
+        btnLamar.className = "btn btn-primary w-100"; 
+    }
+    
+    let myModal = new bootstrap.Modal(document.getElementById('lokerDetailModal'));
+    myModal.show();
 }
-
-//edit dan simpan loker oleh admin
-function prosesSimpanLokerAdmin(id) {
-    if (currentUserRole !== 'staff') {
-        alert("Akses Ditolak!");
-        return;
-    }
-
-    const index = daftarLoker.findIndex(l => l.id === id);
-    if (index !== -1) {
-        // 1. Ambil data dari input modal
-        daftarLoker[index].deskripsi = $('#editDeskripsiAdmin').val();
-        daftarLoker[index].linkLamar = $('#editLinkAdmin').val();
-
-        alert("DATA BERHASIL DISIMPAN!");
-        
-        // 2. Tutup modal 
-        const modalElement = document.getElementById('lokerDetailModal');
-        const modalInstance = bootstrap.Modal.getInstance(modalElement);
-        if (modalInstance) modalInstance.hide();
-
-        // 3. BALIK KE PUSAT KENDALI ADMIN
-        // Dashboard tetap muncul
-        $('#main-dashboard').removeClass('hidden-section').show();
-        
-        // Sembunyikan bagian konten (Halaman Berita/Loker)
-        $('#subpage-home').addClass('hidden-section').hide();
-        
-        // Tampilan kembali Panel Menu Admin (Pusat Kendali)
-        $('#admin-control-panel').removeClass('hidden-section').fadeIn(500);
-
-        // 4. Update tampilan data di background
-        renderLoker();
-        window.scrollTo(0, 0);
-    }
-}
+document.addEventListener("DOMContentLoaded", function() {
+    muatLoker();
+});
 
 /* =========================================
-   7. FORM PENDAFTARAN ALUMNI
+   7. NEWS TICKER & FORM LOGIC
    ========================================= */
+const urlTickerBaru = "https://script.google.com/macros/s/AKfycbzgH1ZvjrMqxNImYXz-xcINphUEma6by6Hf0V3MPzWP32sFdTTeF5BxpyxQNbsrddYe/exec";
+
 function startNewsTicker() {
-    let i = 0;
-    setInterval(() => {
-        $('#news-ticker').fadeOut(500, function() {
-            i = (i + 1) % beritaFkom.length;
-            $(this).text(beritaFkom[i]).fadeIn(500);
+    console.log("Mengambil data ticker dari Sheets...");
+    
+    fetch(urlTickerBaru)
+        .then(res => res.json())
+        .then(data => {
+            if (data && data.length > 0) {
+                let i = 0;
+                const tickerElement = $('#news-ticker');
+                
+                tickerElement.text(data[0]);
+
+                setInterval(() => {
+                    tickerElement.fadeOut(500, function() {
+                        i = (i + 1) % data.length;
+                        $(this).text(data[i]).fadeIn(500);
+                    });
+                }, 4000); // Ganti berita setiap 4 detik
+            }
+        })
+        .catch(err => {
+            console.error("Gagal memuat ticker:", err);
+            $('#news-ticker').text("Gagal memuat berita terbaru.");
         });
-    }, 4000);
 }
 
 function toggleAlumniDetails() {
@@ -545,14 +527,74 @@ function toggleAlumniDetails() {
         detailArea.hide();
     }
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbwmqz3MeXYSxP6ywcjIAIix51DCFdjyjMHaBBLAR0H5ovErWn80bIFUjRgIRYjSpH8u/exec';
+    const form = document.getElementById('mitraForm');
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const modalElement = document.getElementById('devModal');
+
+    if (form) {
+        form.addEventListener('submit', e => {
+            e.preventDefault();
+
+            const formData = new FormData(form);
+            form.reset();
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = "Menyimpan...";
+
+            fetch(scriptURL, {
+                method: 'POST',
+                body: formData
+            })
+            .then(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = "Simpan Data";
+
+                let modalInstance = bootstrap.Modal.getInstance(modalElement);
+                if (!modalInstance) {
+                    modalInstance = new bootstrap.Modal(modalElement);
+                }
+
+                modalInstance.hide();
+
+                modalElement.addEventListener('hidden.bs.modal', function handler() {
+
+                    modalInstance.dispose();
+
+                    document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+
+                    document.body.classList.remove('modal-open');
+                    document.body.style.overflow = 'auto';
+                    document.body.style.paddingRight = '0';
+                    document.body.style.pointerEvents = 'auto';
+
+                    document.body.offsetHeight;
+
+                    alert("Data Berhasil Disimpan!");
+
+                    modalElement.removeEventListener('hidden.bs.modal', handler);
+                });
+            })
+            .catch(error => {
+                console.error('Error!', error.message);
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = "Simpan Data";
+                alert("Gagal menyimpan data.");
+            });
+        });
+    }
+});
+
+
 /* =========================================
-   8. BAGIAN INISIASI KE SPREADSHEET
+   8. INITIALIZE & EVENT HANDLERS (UPDATED)
    ========================================= */
 $(document).ready(function() {
     startNewsTicker();
     renderLoker();
 
-    // URL WEB APP GOOGLE SCRIPT 
     const scriptURL = 'https://script.google.com/macros/s/AKfycbwpUji6h4vDHn4e9xxDV6OJ3Is1QXLsnoa5USyK7Rh9lXH3OzoYkv6oSGi3hLTslMc/exec'; 
 
     function ambilDataDariSheets() {
@@ -570,7 +612,7 @@ $(document).ready(function() {
                         hp: item.hp || "",
                         email: item.email || "",
                         prestasi: item.prestasi || "",
-                        posisi: item.status || "" // 'item.status' diambil dari header Excel yang diproses Apps Script
+                        posisi: item.status || "" 
                     }));
                     updatePublicAlumniTable();
                 }
@@ -578,7 +620,7 @@ $(document).ready(function() {
             .catch(err => console.error("Gagal ambil data:", err));
     }
 
-    // Panggil fungsi ambil data di appscript saat halaman siap
+    // Jalankan fungsinya
     ambilDataDariSheets();
 
     startNewsTicker();
@@ -596,20 +638,16 @@ $(document).ready(function() {
         }
     });
 
-    // Handler Submit Form Alumni - TERKONEKSI KE SPREADSHEET
     $('#formAlumni').on('submit', function(e) {
         e.preventDefault();
         const btnSubmit = $(this).find('button[type="submit"]');
         btnSubmit.html('<i class="fas fa-spinner fa-spin"></i> Mengirim...').prop('disabled', true);
 
-        // Ambil nilai status dan detail
-        const statusVal = $('#inputPosisi').val(); 
+        const statusVal = $('#inputPosisi').val(); // Misal: "Bekerja"
         const detailVal = $('#inputDetail1').val();
-        
-        // gabungan status (Bekerja/Wirausaha/Pendidikan) dengan detailnya
+       
         const posisiLengkap = detailVal ? `${statusVal} (${detailVal})` : statusVal;
 
-        // Susunan data (Nama key sesuai dengan params di Apps Script)
         const formData = {
             nama: $('#inputNama').val(),
             nim: $('#inputNIM').val(),
@@ -618,20 +656,18 @@ $(document).ready(function() {
             hp: $('#inputHP').val(),
             email: $('#inputEmail').val(),
             prestasi: $('#inputPrestasi').val(),
-            status: posisiLengkap // Ini akan diterima sebagai params.status
+            status: posisiLengkap 
         };
 
-        // Kirim data ke Google Sheets via Apps Script
         fetch(scriptURL, { 
             method: 'POST', 
-            mode: 'no-cors', // untuk menghindari masalah CORS saat submit di browser
+            mode: 'no-cors', 
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: new URLSearchParams(formData).toString()
         })
         .then(() => {
             alert('DATA BERHASIL TERKIRIM KE GOOGLE SHEETS!');
-
-            // Tambah data ke database lokal untuk update tabel langsung
+            
             databaseAlumni.unshift({ id: Date.now(), ...formData });
             updatePublicAlumniTable();
 
@@ -647,11 +683,11 @@ $(document).ready(function() {
     });
 });
 
-// Fungsi filter alumni berdasarkan input user di tabel publik
 function filterAlumni() {
     let inputNama = document.getElementById("searchAlumni").value.toLowerCase();
     let selectTahun = document.getElementById("filterTahunAlumni").value;
     let selectProdi = document.getElementById("filterProdiAlumni").value.toUpperCase();
+    
     let table = document.getElementById("alumni-public-table");
     let tr = table.getElementsByTagName("tr");
 
@@ -665,12 +701,10 @@ function filterAlumni() {
             let txtProdi = tdProdi.textContent || tdProdi.innerText;
             let txtTahun = tdTahun.textContent || tdTahun.innerText;
 
-            // Cek kecocokan untuk setiap filter
             let matchNama = txtNama.toLowerCase().indexOf(inputNama) > -1;
             let matchProdi = (selectProdi === "" || txtProdi.toUpperCase().includes(selectProdi));
             let matchTahun = (selectTahun === "" || txtTahun.trim() === selectTahun);
 
-            // Tampilkan atau sembunyikan baris berdasarkan kecocokan
             if (matchNama && matchProdi && matchTahun) {
                 tr[i].style.display = "";
             } else {
@@ -679,19 +713,17 @@ function filterAlumni() {
         }
     }
 }
-    // untuk menambahkan fitur under construction pada kartu pendidikan
     const educationCards = document.querySelectorAll('.education-info-card');
+
     educationCards.forEach(card => {
         card.style.cursor = 'pointer';
+
         card.addEventListener('click', function() {
             const title = this.querySelector('h5').innerText;
+
             alert("MAAF!\n\nFitur '" + title + "' masih dalam tahap pembangunan (Under Construction).\nSilakan cek kembali nanti!");
         });
     })
-
-/* ============================================================
-   9. SISTEM PENCARIAN FITUR CEPAT DASHBOARD
-   ============================================================ */
 console.log("Script Pencarian Aktif");
 
 function bukaPanelCari() {
@@ -729,7 +761,7 @@ function mulaiMencari() {
             div.style.cursor = "pointer";
             div.innerHTML = `<strong>${item.nama}</strong><br><small>${item.desc}</small>`;
             div.onclick = function() {
-                switchMainTab(item.target); // Memanggil fungsi navigasi 
+                switchMainTab(item.target); 
                 tutupPanelCari();
             };
             box.appendChild(div);
@@ -738,26 +770,23 @@ function mulaiMencari() {
 }
 
 /* ============================================================
-   10. KONTROL PANEL ADMIN & STAFF
+   9. KONTROL PANEL ADMIN & STAFF
    ============================================================ */
 
 function onLoginSuccess() {
-    // menyembunyikan dashboard utama tempat konten berada
     document.getElementById('subpage-home').classList.add('hidden-section');
     document.getElementById('admin-control-panel').classList.remove('hidden-section');
-    // tombol "Edit (Staf Only)" di seluruh web
     const adminButtons = document.querySelectorAll('.admin-only');
     adminButtons.forEach(btn => {
         btn.style.setProperty('display', 'block', 'important');
     });
 }
 
-// fungsi untuk menampilkan section edit berdasarkan tipe oleh staf
 function showEditSection(type) {
     document.getElementById('admin-control-panel').classList.add('hidden-section');
+
     document.getElementById('subpage-home').classList.remove('hidden-section');
     
-    // IZIN EDIT 
     applyRolePermissions(); 
 
     if(type === 'news') {
@@ -767,6 +796,7 @@ function showEditSection(type) {
     } 
     else if(type === 'career') {
         renderLoker(); 
+        
         const careerElement = document.getElementById('loker-container');
         if(careerElement) careerElement.scrollIntoView({ behavior: 'smooth' });
         alert('MODE EDIT LOWONGAN AKTIF: Gunakan tombol "Kelola & Edit" pada kartu lowongan.');
@@ -778,7 +808,6 @@ function showEditSection(type) {
     }
 }
 
-// fungsi logout staf dan reload halaman
 function logoutStaff() {
     location.reload(); 
 }
@@ -787,14 +816,15 @@ function matikanModeEdit() {
     currentUserRole = "";
     isStaffAuthenticated = false;
 
-    // menghilangkan semua mode edit setelah staf logout
     $('[contenteditable]').attr('contenteditable', 'false').css({
         'border': 'none',
         'padding': '0',
         'cursor': 'default'
     });
+
     $('.admin-only').hide();
     $('#admin-control-panel').addClass('hidden-section');
+
     alert("Mode Admin dinonaktifkan. Anda sekarang dalam mode pengunjung.");
     location.reload(); 
 }
@@ -807,4 +837,3 @@ function kembaliKePanelAdmin() {
     
     window.scrollTo(0, 0);
 }
-
