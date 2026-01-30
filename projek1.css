@@ -124,8 +124,7 @@
        box-shadow: 0 15px 30px rgba(255, 204, 0, 0.6);
        background: #fff;
    }
-   
-   /* News Ticker */
+
    .news-container {
        max-width: 700px;
        margin: 0 auto;
@@ -193,10 +192,9 @@
    .alumni-hero {
        height: 350px;
        background: linear-gradient(rgba(6,69,132,0.8), rgba(12, 38, 122, 0.7)), 
-                   url('https://images.unsplash.com/photo-1523050853063-bd8012fec21b?auto=format&fit=crop&w=1500&q=80') center/cover;
+            url('https://images.unsplash.com/photo-1523050853063-bd8012fec21b?auto=format&fit=crop&w=1500&q=80') center/cover;
    }
    
-   /* Styling Khusus Info Pendidikan di Beranda */
    .education-info-card {
        border-radius: 20px;
        border-top: 5px solid var(--uniku-blue);
@@ -282,7 +280,6 @@
        to { opacity: 1; transform: translateY(0); }
    }
    
-   /* WhatsApp Floating */
    .floating-contact { position: fixed; bottom: 30px; right: 30px; z-index: 1000; }
    .float-btn.wa { 
        background: #25d366; color: white; text-decoration: none; 
@@ -295,8 +292,6 @@
    /* ============================================================
       9. KODE BARU: STAFF EDITOR MODE & ADMIN UI
       ============================================================ */
-   
-   /* Efek saat elemen bisa diedit (Staff Mode) */
    [contenteditable="true"] {
        transition: all 0.2s ease;
    }
@@ -308,9 +303,8 @@
        border-radius: 4px;
    }
    
-   /* Tombol Simpan Floating Khusus Admin */
    .admin-only {
-       display: none; /* Default tersembunyi, muncul via JS */
+       display: none; 
    }
    
    .admin-floating-btn {
@@ -325,7 +319,6 @@
        transform: scale(1.1) rotate(-2deg);
    }
    
-   /* Animasi untuk text yang sedang diedit */
    .editing-active {
        border: 1px dashed var(--uniku-yellow) !important;
        animation: border-pulse 2s infinite;
@@ -341,7 +334,6 @@
    STYLING BAGIAN BERITA (NEWS SECTION)
    ========================================= */
    
-   /* Efek kartu berita agar bisa melayang saat di-hover */
    .news-card-item {
        transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
        border-radius: 15px !important;
@@ -349,11 +341,10 @@
    }
    
    .news-card-item:hover {
-       transform: translateY(-10px); /* Melayang ke atas */
-       box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1) !important; /* Bayangan lebih lembut */
+       transform: translateY(-10px); 
+       box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1) !important; 
    }
    
-   /* Efek zoom pada gambar saat kartu disentuh */
    .news-card-item .card-img-top {
        transition: transform 0.6s ease;
    }
@@ -362,13 +353,11 @@
        transform: scale(1.1);
    }
    
-   /* Styling untuk teks ringkasan agar rapi (maksimal 2 baris) */
    .news-card-item p {
        line-height: 1.6;
        color: #6c757d;
    }
    
-   /* Warna-warna badge kategori yang lebih modern */
    .bg-primary-subtle {
        background-color: #e7f1ff !important;
        color: #0d6efd !important;
@@ -387,13 +376,11 @@
        border: 1px solid #fff3cd;
    }
    
-   /* Garis pembatas (Horizontal Rule) */
    hr.my-5 {
        border-top: 2px dashed #dee2e6;
        opacity: 0.5;
    }
    
-   /* Styling Tombol Baca Selengkapnya */
    .btn-link {
        font-size: 13px;
        letter-spacing: 0.5px;
@@ -405,7 +392,6 @@
        padding-left: 5px !important;
    }
    
-   /* Agar tampilan mobile tetap rapi */
    @media (max-width: 768px) {
        .news-card-item {
            margin-bottom: 20px;
@@ -437,7 +423,7 @@
        padding: 15px;
        font-size: 1.5rem;
        border: none;
-       border-bottom: 2px solid #ffc107; /* Warna kuning khas UNIKU */
+       border-bottom: 2px solid #ffc107; 
        background: transparent;
        color: white;
    }
@@ -454,7 +440,6 @@
    /* ============================================================
       10. TAMBAHAN FITUR: EDIT AREA & TABLE STYLING
       ============================================================ */
-   
    .edit-area {
        position: relative;
        cursor: text;
