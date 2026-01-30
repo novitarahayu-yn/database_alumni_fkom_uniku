@@ -99,14 +99,13 @@ function goToProdi() {
 function goToDetailProdi(prodi) {
     currentProdi = prodi;
     $('#title-prodi-detail').text(prodi);
-    if (dataProdi[prodi]) {
-        $('#visi-text').text(dataProdi[prodi].visi);
-        let misiHtml = "";
-        dataProdi[prodi].misi.forEach(m => {
-            misiHtml += `<li class="mb-2"><i class="fas fa-check-circle text-primary me-2"></i>${m}</li>`;
-        });
-        $('#misi-list').html(misiHtml);
-    }
+    $('#visi-text').text(dataProdi[prodi].visi);
+    
+    let misiHtml = "";
+    dataProdi[prodi].misi.forEach(m => {
+        misiHtml += `<li class="mb-2"><i class="fas fa-check-circle text-primary me-2"></i>${m}</li>`;
+    });
+    $('#misi-list').html(misiHtml);
 
     $('#prodi-page').fadeOut(500, function() {
         $('#visi-misi-prodi').removeClass('hidden-section').hide().fadeIn(500);
@@ -115,10 +114,11 @@ function goToDetailProdi(prodi) {
 
 function goToDashboard() {
     const namaProdiTerpilih = currentProdi; 
-    $('#main-title-header').text(namaProdiTerpilih); 
-    $('#sub-title-header').text("PROGRAM STUDI");   
-    $('#nav-prodi-label').text(namaProdiTerpilih);  
 
+    $('#main-title-header').text(namaProdiTerpilih); 
+    $('#sub-title-header').text("PROGRAM STUDI");    
+    $('#nav-prodi-label').text(namaProdiTerpilih);  
+   
     let gambarLogo = "logo fkom outline.png"; 
     
     if (namaProdiTerpilih === "TEKNIK INFORMATIKA") {
@@ -174,11 +174,10 @@ function executeSwitchTab(tabName) {
 
     updatePublicAlumniTable();
 }
-
 /* =========================================
    4. LOGIKA LOGIN & OTORITAS (AUTH)
    ========================================= */
-function openLoginForm(kategori) {
+   function openLoginForm(kategori) {
     const modalTitle = document.querySelector('#passwordModal .modal-title');
     const modalDesc = document.querySelector('#passwordModal .text-muted');
     const emailLabel = document.querySelector('#passwordModal label:nth-of-type(1)');
@@ -203,7 +202,7 @@ function openLoginForm(kategori) {
         emailLabel.innerText = "NIM MAHASISWA";
         emailInput.placeholder = "Masukkan NIM Anda";
         loginBtn.innerHTML = 'MASUK SEBAGAI MAHASISWA <i class="fas fa-sign-in-alt ms-1"></i>';
-      
+ 
         loginBtn.onclick = verifyMahasiswaAccess;
 
     } 
@@ -241,38 +240,125 @@ function verifyStaffAccess() {
         if (modalInstance) modalInstance.hide();
 
         onLoginSuccess(); 
-       
+
     } else {
         alert("DATA ATAU KODE OTORITAS SALAH!"); 
         $('#authError').text("Kredensial tidak valid. Silahkan hubungi IT Center.").fadeIn();
     }
 }
 
+/* ===================================================
+   5. LOGIKA TERPADU: SATU VERIFIKASI UNTUK LOGIN & DAFTAR
+   KODE RAHASIA: ALUMNIFKOM
+   =================================================== */
+
+const KODE_RAHASIA_ALUMNI = "ALUMNIFKOM"; 
+
+$(document).ready(function() {
+    
+    $('#tab-form').on('click', function(e) {
+        if (!isAlumniAuthenticated) {
+            e.preventDefault(); 
+            e.stopImmediatePropagation(); 
+
+            $('#modalTitle').text("VERIFIKASI AKSES ALUMNI (DAFTAR)"); 
+            bukaModalAkses();
+        }
+    });
+
+    $(document).on('click', '#btnLoginAlumni, .login-alumni-trigger', function(e) {
+        e.preventDefault();
+        
+        if (!isAlumniAuthenticated) {
+            $('#modalTitle').text("VERIFIKASI AKSES ALUMNI (LOGIN)"); 
+            bukaModalAkses();
+        } else {
+            direksiKeFormAlumni();
+        }
+    });
+
+    $(document).off('click', '#mainLoginBtn').on('click', '#mainLoginBtn', function(e) {
+        e.preventDefault();
+        
+        const title = $('#modalTitle').text().toUpperCase();
+        
+        if (title.includes("ALUMNI")) {
+            verifyAlumniAccess(); 
+        } else {
+            if (typeof verifyMahasiswaAccess === "function") verifyMahasiswaAccess();
+        }
+    });
+});
+
+function bukaModalAkses() {
+    $('#staffEmail, #staffPassword, #authCode').val('');
+    const modalEl = document.getElementById('passwordModal');
+    bootstrap.Modal.getOrCreateInstance(modalEl).show();
+}
+
+function direksiKeFormAlumni() {
+    $('#welcome-page, #prodi-page, #visi-misi-prodi').hide();
+    $('#main-dashboard').removeClass('hidden-section').show();
+    
+    if (typeof executeSwitchTab === "function") {
+        executeSwitchTab('form');
+    }
+}
+
 function verifyAlumniAccess() {
     const identitas = $('#staffEmail').val().trim(); 
-    const pass = $('#staffPassword').val().trim();
-    const kode = $('#authCode').val().trim(); 
+    const pass = $('#staffPassword').val().trim(); 
+    const kode = $('#authCode').val().trim().toUpperCase(); 
 
-    // Syarat: Email diisi DAN Password TIDAK BOLEH KOSONG (pass !== "") DAN Kode Benar
-    if (identitas !== "" && pass !== "" && kode === KODE_RAHASIA.ALUMNI) {
+    if (identitas !== "" && pass !== "" && kode === KODE_RAHASIA_ALUMNI) {
         currentUserRole = "alumni";
         isAlumniAuthenticated = true;
         
-        alert("SELAMAT DATANG ALUMNI FIKOM UNIKU!\nLogin Berhasil menggunakan Email: " + identitas);
+        alert("SELAMAT DATANG ALUMNI FKOM UNIKU!\nLogin Berhasil menggunakan Email: " + identitas);
         
-        bootstrap.Modal.getInstance(document.getElementById('passwordModal')).hide();
+        const modalEl = document.getElementById('passwordModal');
+        bootstrap.Modal.getInstance(modalEl).hide();
+
         $('#welcome-page, #prodi-page, #visi-misi-prodi').hide();
         $('#main-dashboard').removeClass('hidden-section').hide().fadeIn(800);
         
-        executeSwitchTab('form');
-        applyRolePermissions();
-        renderLoker();
+        if (typeof executeSwitchTab === "function") executeSwitchTab('form');
+        if (typeof applyRolePermissions === "function") applyRolePermissions();
+        if (typeof renderLoker === "function") renderLoker();
+        
     } else {
-        // Jika password kosong atau kode salah
         if (pass === "") {
             alert("LOGIN GAGAL!\nPassword Gmail Anda wajib diisi.");
+        } else if (kode !== KODE_RAHASIA_ALUMNI) {
+            alert("KODE OTORITAS SALAH!\nGunakan: ALUMNIFKOM");
         } else {
             alert("LOGIN GAGAL!\nPastikan Email dan Kode Otoritas Alumni sudah benar.");
+        }
+    }
+}
+
+function prosesVerifikasiAlumniTunggal() {
+    const identitas = $('#staffEmail').val().trim(); 
+    const pass = $('#staffPassword').val().trim(); 
+    const kode = $('#authCode').val().trim().toUpperCase(); 
+
+    if (identitas !== "" && pass !== "" && kode === "ALUMNIFKOM") {
+        
+        isAlumniAuthenticated = true;
+        currentUserRole = "alumni";
+        
+        alert("VERIFIKASI BERHASIL!\nSelamat Datang Alumni FKOM.");
+
+        const modalEl = document.getElementById('passwordModal');
+        bootstrap.Modal.getInstance(modalEl).hide();
+
+        direksiKeFormAlumni();
+
+    } else {
+        if (kode !== "ALUMNIFKOM") {
+            alert("KODE OTORITAS SALAH!\nGunakan: ALUMNIFKOM");
+        } else {
+            alert("DATA TIDAK LENGKAP!\nEmail/NIM dan Password tidak boleh kosong.");
         }
     }
 }
@@ -282,18 +368,17 @@ function verifyMahasiswaAccess() {
     const pass = $('#staffPassword').val().trim(); 
     const kode = $('#authCode').val().trim();
 
-    // Syarat: NIM/Email diisi DAN Password TIDAK BOLEH KOSONG DAN Kode Benar
     if (nim !== "" && pass !== "" && kode === KODE_RAHASIA.MHS) {
         currentUserRole = "mahasiswa";
         
-        alert("SELAMAT DATANG MAHASISWA FIKOM UNIKU!\nLogin Berhasil.");
+        alert("SELAMAT DATANG MAHASISWA FKOM UNIKU!\nLogin Berhasil.");
 
         bootstrap.Modal.getInstance(document.getElementById('passwordModal')).hide();
         $('#welcome-page, #prodi-page, #visi-misi-prodi').hide();
         $('#main-dashboard').removeClass('hidden-section').hide().fadeIn(800);
         
-        ambilDataDariSheets(); // Tarik data dari Google Sheets
-        updatePublicAlumniTable(); // Render ke tabel
+        ambilDataDariSheets(); 
+        updatePublicAlumniTable(); 
 
         executeSwitchTab('home');
         applyRolePermissions();
@@ -326,9 +411,8 @@ function applyRolePermissions() {
         $('.admin-only').hide();
     }
 }
-
 /* =========================================
-   5. FUNGSI RENDER DATA (ALUMNI & LOKER)
+   6. FUNGSI RENDER DATA (ALUMNI & LOKER)
    ========================================= */
 function updatePublicAlumniTable() {
     const tableBody = $('#alumni-public-table');
@@ -340,7 +424,6 @@ function updatePublicAlumniTable() {
         if (currentUserRole === "staff") {
             kolomAksi = `<td><button class="btn btn-sm btn-danger" onclick="hapusDataAlumni(${data.id})"><i class="fas fa-trash"></i></button></td>`;
         } else {
-            // Jika bukan staff, kolom kosong agar tabel tidak geser
             kolomAksi = `<td>-</td>`; 
         }
 
@@ -371,13 +454,11 @@ function renderLoker() {
     const container = document.getElementById('loker-container');
     const statusLogin = document.querySelector('.dropdown-toggle').innerText.toLowerCase();
     
-    // Tentukan: Apakah user ini Staf?
     const isStaff = statusLogin.includes("staf") || statusLogin.includes("admin");
 
-    container.innerHTML = ""; // Bersihkan tampilan lama
+    container.innerHTML = ""; 
 
     dataLoker.forEach((loker) => {
-        // Tombol ini hanya tercipta jika isStaff bernilai TRUE
         const tombolKhususStaff = isStaff ? 
             `<button class="btn btn-dark btn-sm w-100 mt-2" onclick="bukaEditLoker(${loker.id})">
                 <i class="fas fa-edit"></i> Edit Loker
@@ -397,7 +478,7 @@ function renderLoker() {
     });
 }
 /* ============================================================
-   6. SISTEM MANAJEMEN LOKER (LOGIKA GOOGLE SHEETS)
+   7. SISTEM MANAJEMEN LOKER (LOGIKA GOOGLE SHEETS)
    ============================================================ */
 
 const urlSheets = "https://script.google.com/macros/s/AKfycbxD4EIcZtodn0efWTx6iPdw66kD1b5NH_n1ZlXQj8DeqebUvAPWuY-Y6hdk6aALv36I/exec";
@@ -474,25 +555,27 @@ function bukaModalSheets(index) {
     let myModal = new bootstrap.Modal(document.getElementById('lokerDetailModal'));
     myModal.show();
 }
+
 document.addEventListener("DOMContentLoaded", function() {
     muatLoker();
 });
 
 /* =========================================
-   7. NEWS TICKER & FORM LOGIC
+   8. GLOBAL VARIABLES & CONFIGURATION
    ========================================= */
+databaseAlumni = []; 
 const urlTickerBaru = "https://script.google.com/macros/s/AKfycbzgH1ZvjrMqxNImYXz-xcINphUEma6by6Hf0V3MPzWP32sFdTTeF5BxpyxQNbsrddYe/exec";
+const scriptURL = 'https://script.google.com/macros/s/AKfycbwpUji6h4vDHn4e9xxDV6OJ3Is1QXLsnoa5USyK7Rh9lXH3OzoYkv6oSGi3hLTslMc/exec'; 
+const mitraScriptURL = 'https://script.google.com/macros/s/AKfycbwmqz3MeXYSxP6ywcjIAIix51DCFdjyjMHaBBLAR0H5ovErWn80bIFUjRgIRYjSpH8u/exec';
 
 function startNewsTicker() {
     console.log("Mengambil data ticker dari Sheets...");
-    
     fetch(urlTickerBaru)
         .then(res => res.json())
         .then(data => {
             if (data && data.length > 0) {
                 let i = 0;
                 const tickerElement = $('#news-ticker');
-                
                 tickerElement.text(data[0]);
 
                 setInterval(() => {
@@ -500,7 +583,7 @@ function startNewsTicker() {
                         i = (i + 1) % data.length;
                         $(this).text(data[i]).fadeIn(500);
                     });
-                }, 4000); // Ganti berita setiap 4 detik
+                }, 4000);
             }
         })
         .catch(err => {
@@ -509,197 +592,89 @@ function startNewsTicker() {
         });
 }
 
+/* =========================================
+   9. DATA SYNCHRONIZATION (ALUMNI)
+   ========================================= */
+function ambilDataDariSheets() {
+    console.log("Sedang mengambil data terbaru dari Spreadsheet...");
+    fetch(scriptURL)
+        .then(res => res.json())
+        .then(data => {
+            if(data && data.length > 0) {
+                databaseAlumni = data.map(item => ({
+                    id: Math.random(),
+                    nama: item.nama || "",
+                    nim: item.nim || "",
+                    prodi: item.prodi || "",
+                    tahun: item.tahun || "",
+                    hp: item.hp || "",
+                    email: item.email || "",
+                    prestasi: item.prestasi || "",
+                    posisi: item.status || "" 
+                }));
+                updatePublicAlumniTable();
+            }
+        })
+        .catch(err => console.error("Gagal ambil data:", err));
+}
+
+function updatePublicAlumniTable() {
+    const tableBody = document.getElementById("alumni-public-table");
+    if (!tableBody) return;
+    
+    tableBody.innerHTML = "";
+    databaseAlumni.forEach((item, index) => {
+        const row = `
+            <tr>
+                <td>${index + 1}</td>
+                <td>${item.nama}</td>
+                <td>${item.nim}</td>
+                <td>${item.prodi}</td>
+                <td>${item.tahun}</td>
+                <td>${item.hp}</td>
+                <td>${item.prestasi}</td>
+                <td>${item.posisi}</td>
+                <td class="btn-edit-staff" style="display:none;">
+                    <button class="btn btn-sm btn-warning">Edit</button>
+                </td>
+            </tr>`;
+        tableBody.innerHTML += row;
+    });
+}
+
 function toggleAlumniDetails() {
     const status = $('#inputPosisi').val();
     const detailArea = $('#detailTambahan');
+    const label1 = $('#labelDetail1');
+    const label2 = $('#labelDetail2');
+    const title = $('#detailTitle');
     
     if (status === "Bekerja") {
         detailArea.show();
-        $('#detailTitle').text("Detail Pekerjaan");
-        $('#labelDetail1').text("NAMA PERUSAHAAN / INSTANSI");
-        $('#labelDetail2').text("DAERAH / LOKASI KERJA");
+        title.text("Detail Pekerjaan");
+        label1.text("NAMA PERUSAHAAN / INSTANSI");
+        label2.text("DAERAH / LOKASI KERJA");
     } 
     else if (status === "Wirausaha") {
         detailArea.show();
-        $('#detailTitle').text("Detail Usaha");
-        $('#labelDetail1').text("NAMA USAHA");
-        $('#labelDetail2').text("BERGERAK DI BIDANG");
+        title.text("Detail Usaha");
+        label1.text("NAMA USAHA");
+        label2.text("BERGERAK DI BIDANG");
     } 
     else if (status === "Pendidikan") {
         detailArea.show();
-        $('#detailTitle').text("Detail Studi Lanjut");
-        $('#labelDetail1').text("NAMA UNIVERSITAS");
-        $('#labelDetail2').text("PROGRAM STUDI / JENJANG");
+        title.text("Detail Studi Lanjut");
+        label1.text("NAMA UNIVERSITAS");
+        label2.text("PROGRAM STUDI / JENJANG");
     } 
     else {
         detailArea.hide();
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbwmqz3MeXYSxP6ywcjIAIix51DCFdjyjMHaBBLAR0H5ovErWn80bIFUjRgIRYjSpH8u/exec';
-    const form = document.getElementById('mitraForm');
-    const submitBtn = form.querySelector('button[type="submit"]');
-    const modalElement = document.getElementById('devModal');
-
-    if (form) {
-        form.addEventListener('submit', e => {
-            e.preventDefault();
-
-            const formData = new FormData(form);
-            form.reset();
-
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = "Menyimpan...";
-
-            fetch(scriptURL, {
-                method: 'POST',
-                body: formData
-            })
-            .then(() => {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = "Simpan Data";
-
-                let modalInstance = bootstrap.Modal.getInstance(modalElement);
-                if (!modalInstance) {
-                    modalInstance = new bootstrap.Modal(modalElement);
-                }
-
-                modalInstance.hide();
-
-                modalElement.addEventListener('hidden.bs.modal', function handler() {
-
-                    modalInstance.dispose();
-
-                    document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
-
-                    document.body.classList.remove('modal-open');
-                    document.body.style.overflow = 'auto';
-                    document.body.style.paddingRight = '0';
-                    document.body.style.pointerEvents = 'auto';
-
-                    document.body.offsetHeight;
-
-                    alert("Data Berhasil Disimpan!");
-
-                    modalElement.removeEventListener('hidden.bs.modal', handler);
-                });
-            })
-            .catch(error => {
-                console.error('Error!', error.message);
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = "Simpan Data";
-                alert("Gagal menyimpan data.");
-            });
-        });
-    }
-});
-
-
 /* =========================================
-   8. INITIALIZE & EVENT HANDLERS (UPDATED)
+   10. SEARCH & FILTER FUNCTIONS
    ========================================= */
-$(document).ready(function() {
-    startNewsTicker();
-    renderLoker();
-
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbwpUji6h4vDHn4e9xxDV6OJ3Is1QXLsnoa5USyK7Rh9lXH3OzoYkv6oSGi3hLTslMc/exec'; 
-
-    function ambilDataDariSheets() {
-        console.log("Sedang mengambil data terbaru...");
-        fetch(scriptURL)
-            .then(res => res.json())
-            .then(data => {
-                if(data && data.length > 0) {
-                    databaseAlumni = data.map(item => ({
-                        id: Math.random(),
-                        nama: item.nama || "",
-                        nim: item.nim || "",
-                        prodi: item.prodi || "",
-                        tahun: item.tahun || "",
-                        hp: item.hp || "",
-                        email: item.email || "",
-                        prestasi: item.prestasi || "",
-                        posisi: item.status || "" 
-                    }));
-                    updatePublicAlumniTable();
-                }
-            })
-            .catch(err => console.error("Gagal ambil data:", err));
-    }
-
-    ambilDataDariSheets();
-
-    startNewsTicker();
-    renderLoker();
-
-    $(document).off('click', '#mainLoginBtn').on('click', '#mainLoginBtn', function(e) {
-        e.preventDefault();
-        const context = $('#modalTitle').text();
-        if (context.includes("Staff")) {
-            verifyStaffAccess();
-        } else if (context.includes("Mahasiswa")) {
-            verifyMahasiswaAccess();
-        } else {
-            verifyAlumniAccess();
-        }
-    });
-
-    $('#formAlumni').on('submit', function(e) {
-    e.preventDefault(); 
-    
-    const btnSubmit = $(this).find('button[type="submit"]');
-    btnSubmit.html('<i class="fas fa-spinner fa-spin"></i> Sedang Menyimpan...').prop('disabled', true);
-
-    const statusVal = $('#inputPosisi').val(); 
-    const detailVal = $('#inputDetail1').val();
-    const posisiLengkap = detailVal ? `${statusVal} (${detailVal})` : statusVal;
-
-    const formData = new URLSearchParams();
-    formData.append('nama', $('#inputNama').val());
-    formData.append('nim', $('#inputNIM').val());
-    formData.append('prodi', currentProdi);
-    formData.append('tahun', $('#inputTahun').val());
-    formData.append('nomor_wa', $('#inputHP').val());
-    formData.append('email', $('#inputEmail').val());
-    formData.append('prestasi', $('#inputPrestasi').val());
-    formData.append('posisi', posisiLengkap);
-
-    fetch(scriptURL, { 
-        method: 'POST', 
-        mode: 'no-cors', 
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: formData.toString()
-    })
-    .then(() => {
-        alert('DATA BERHASIL DISIMPAN!');
-        
-        databaseAlumni.unshift({ 
-            id: Date.now(), 
-            nama: $('#inputNama').val(),
-            nim: $('#inputNIM').val(),
-            prodi: currentProdi,
-            tahun: $('#inputTahun').val(),
-            hp: $('#inputHP').val(),
-            prestasi: $('#inputPrestasi').val(),
-            posisi: posisiLengkap 
-        });
-        
-        updatePublicAlumniTable();
-
-        $('#formAlumni')[0].reset();
-        $('#detailTambahan').hide(); 
-        btnSubmit.html('SIMPAN DATA <i class="fas fa-paper-plane ms-1"></i>').prop('disabled', false);
-        
-        executeSwitchTab('data'); 
-    })
-    .catch(error => {
-        console.error('Error!', error);
-        alert('Koneksi terganggu, namun data sudah dicoba dikirim.');
-        btnSubmit.text("SIMPAN DATA").prop('disabled', false);
-    });
-});
-
 function filterAlumni() {
     let inputNama = document.getElementById("searchAlumni").value.toLowerCase();
     let selectTahun = document.getElementById("filterTahunAlumni").value;
@@ -710,46 +685,28 @@ function filterAlumni() {
 
     for (let i = 0; i < tr.length; i++) {
         let tdNama = tr[i].getElementsByTagName("td")[1];
-        let tdProdi = tr[i].getElementsByTagName("td")[2];
-        let tdTahun = tr[i].getElementsByTagName("td")[3];
+        let tdProdi = tr[i].getElementsByTagName("td")[3]; 
+        let tdTahun = tr[i].getElementsByTagName("td")[4]; 
 
         if (tdNama && tdProdi && tdTahun) {
-            let txtNama = tdNama.textContent || tdNama.innerText;
-            let txtProdi = tdProdi.textContent || tdProdi.innerText;
-            let txtTahun = tdTahun.textContent || tdTahun.innerText;
+            let txtNama = (tdNama.textContent || tdNama.innerText).toLowerCase();
+            let txtProdi = (tdProdi.textContent || tdProdi.innerText).toUpperCase();
+            let txtTahun = (tdTahun.textContent || tdTahun.innerText).trim();
 
-            let matchNama = txtNama.toLowerCase().indexOf(inputNama) > -1;
-            let matchProdi = (selectProdi === "" || txtProdi.toUpperCase().includes(selectProdi));
-            let matchTahun = (selectTahun === "" || txtTahun.trim() === selectTahun);
+            let matchNama = txtNama.indexOf(inputNama) > -1;
+            let matchProdi = (selectProdi === "" || txtProdi.includes(selectProdi));
+            let matchTahun = (selectTahun === "" || txtTahun === selectTahun);
 
-            if (matchNama && matchProdi && matchTahun) {
-                tr[i].style.display = "";
-            } else {
-                tr[i].style.display = "none";
-            }
+            tr[i].style.display = (matchNama && matchProdi && matchTahun) ? "" : "none";
         }
     }
 }
-    const educationCards = document.querySelectorAll('.education-info-card');
-
-    educationCards.forEach(card => {
-        card.style.cursor = 'pointer';
-
-        card.addEventListener('click', function() {
-            const title = this.querySelector('h5').innerText;
-
-            alert("MAAF!\n\nFitur '" + title + "' masih dalam tahap pembangunan (Under Construction).\nSilakan cek kembali nanti!");
-        });
-    })
-console.log("Script Pencarian Aktif");
 
 function bukaPanelCari() {
     const panel = document.getElementById('panelCari');
     if (panel) {
         panel.style.display = 'flex';
         document.getElementById('inputCariFitur').focus();
-    } else {
-        alert("Error: Elemen panelCari tidak ditemukan di HTML!");
     }
 }
 
@@ -765,9 +722,7 @@ function mulaiMencari() {
     const daftarTools = [
         { nama: "Beranda & Info", target: "home", desc: "Halaman depan portal" },
         { nama: "Daftar Alumni", target: "form", desc: "Formulir pendaftaran alumni" },
-        { nama: "Data Alumni / Database", target: "data", desc: "Tabel database alumni FIKOM" },
-        { nama: "Lowongan Kerja", target: "home", desc: "Info loker dan karir" },
-        { nama: "Staf & Dosen", target: "staff", desc: "Profil pengajar" }
+        { nama: "Data Alumni / Database", target: "data", desc: "Tabel database alumni FKOM" }
     ];
 
     if (keyword.length > 0) {
@@ -775,10 +730,8 @@ function mulaiMencari() {
         matches.forEach(item => {
             let div = document.createElement('div');
             div.className = "list-group-item list-group-item-action p-3";
-            div.style.cursor = "pointer";
             div.innerHTML = `<strong>${item.nama}</strong><br><small>${item.desc}</small>`;
             div.onclick = function() {
-                switchMainTab(item.target); 
                 tutupPanelCari();
             };
             box.appendChild(div);
@@ -786,13 +739,103 @@ function mulaiMencari() {
     }
 }
 
+/* =========================================
+   11. MAIN INITIALIZATION (DOCUMENT READY)
+   ========================================= */
+$(document).ready(function() {
+    startNewsTicker();
+    ambilDataDariSheets();
+
+    $('#formAlumni').on('submit', function(e) {
+        e.preventDefault();
+        const btnSubmit = $(this).find('button[type="submit"]');
+        btnSubmit.html('<i class="fas fa-spinner fa-spin"></i> Mengirim...').prop('disabled', true);
+
+        const statusVal = $('#inputPosisi').val();
+        const detailVal = $('#inputDetail1').val();
+        const posisiLengkap = detailVal ? `${statusVal} (${detailVal})` : statusVal;
+
+        const formData = {
+            nama: $('#inputNama').val(),
+            nim: $('#inputNIM').val(),
+            prodi: $('#inputProdi').val(),
+            tahun: $('#inputTahun').val(),
+            hp: $('#inputHP').val(),
+            email: $('#inputEmail').val(),
+            prestasi: $('#inputPrestasi').val(),
+            status: posisiLengkap 
+        };
+
+        fetch(scriptURL, { 
+            method: 'POST', 
+            mode: 'no-cors', 
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams(formData).toString()
+        })
+        .then(() => {
+            alert('DATA BERHASIL DISIMPAN KE GOOGLE SHEETS!');
+            databaseAlumni.unshift({ id: Date.now(), ...formData, posisi: formData.status });
+            updatePublicAlumniTable();
+            $('#formAlumni')[0].reset();
+            $('#detailTambahan').hide(); 
+            btnSubmit.html('SIMPAN DATA <i class="fas fa-paper-plane ms-2"></i>').prop('disabled', false);
+        })
+        .catch(error => {
+            console.error('Error!', error);
+            alert('Gagal mengirim data.');
+            btnSubmit.text("SIMPAN DATA").prop('disabled', false);
+        });
+    });
+
+    const mitraForm = document.getElementById('mitraForm');
+    if (mitraForm) {
+        mitraForm.addEventListener('submit', e => {
+            e.preventDefault();
+            const submitBtnMitra = mitraForm.querySelector('button[type="submit"]');
+            const modalElement = document.getElementById('devModal');
+            const formDataMitra = new FormData(mitraForm);
+
+            submitBtnMitra.disabled = true;
+            submitBtnMitra.innerHTML = "Menyimpan...";
+
+            fetch(mitraScriptURL, {
+                method: 'POST',
+                body: formDataMitra
+            })
+            .then(() => {
+                submitBtnMitra.disabled = false;
+                submitBtnMitra.innerHTML = "Simpan Data";
+                mitraForm.reset();
+
+                let modalInstance = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
+                modalInstance.hide();
+
+                modalElement.addEventListener('hidden.bs.modal', function handler() {
+                    modalInstance.dispose();
+                    document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+                    document.body.classList.remove('modal-open');
+                    document.body.style.overflow = 'auto';
+                    alert("Data Berhasil Disimpan!");
+                    modalElement.removeEventListener('hidden.bs.modal', handler);
+                }, { once: true });
+            })
+            .catch(error => {
+                console.error('Error!', error.message);
+                submitBtnMitra.disabled = false;
+                submitBtnMitra.innerHTML = "Simpan Data";
+                alert("Gagal menyimpan data.");
+            });
+        });
+    }
+});
 /* ============================================================
-   9. KONTROL PANEL ADMIN & STAFF
+   12. KONTROL PANEL ADMIN & STAFF
    ============================================================ */
 
 function onLoginSuccess() {
     document.getElementById('subpage-home').classList.add('hidden-section');
     document.getElementById('admin-control-panel').classList.remove('hidden-section');
+    
     const adminButtons = document.querySelectorAll('.admin-only');
     adminButtons.forEach(btn => {
         btn.style.setProperty('display', 'block', 'important');
@@ -801,9 +844,7 @@ function onLoginSuccess() {
 
 function showEditSection(type) {
     document.getElementById('admin-control-panel').classList.add('hidden-section');
-
     document.getElementById('subpage-home').classList.remove('hidden-section');
-    
     applyRolePermissions(); 
 
     if(type === 'news') {
